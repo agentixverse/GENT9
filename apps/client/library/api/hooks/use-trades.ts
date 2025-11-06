@@ -3,20 +3,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Trade, JournalEntry, TradingStatus } from "../types";
-import { 
-  mockTrades, 
-  mockJournalEntries, 
-  mockTradingStatus,
-  generateMockTrades,
-  generateMockJournalEntries
-} from "../mock-data";
+import api from "../client";
 
-export const useTrades = () => {
+export interface TradePerformanceDetails {
+  pnl: number;
+  returnPercent: number;
+  fee: number;
+}
+
+// ==================== SECTOR-SCOPED HOOKS ====================
+
+export const useTrades = (sectorId: number) => {
   return useQuery({
-    queryKey: ["trades"],
+    queryKey: ["trades", "sector", sectorId],
     queryFn: async (): Promise<Trade[]> => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return generateMockTrades(20);
+      const response = await api.get<Trade[]>(`/trades/sector/${sectorId}`);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: !!sectorId,
+  });
+};
+
+// ==================== AGGREGATE HOOKS (ALL SECTORS) ====================
+
+export const useAggregateTrades = () => {
+  return useQuery({
+    queryKey: ["trades", "aggregate"],
+    queryFn: async (): Promise<Trade[]> => {
+      const response = await api.get<Trade[]>("/trades/aggregate");
+      return response.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -26,11 +42,8 @@ export const useTradeDetails = (tradeId: string) => {
   return useQuery({
     queryKey: ["trades", tradeId],
     queryFn: async (): Promise<Trade | null> => {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      // Generate a consistent set of trades and find the one we need
-      const allTrades = generateMockTrades(20);
-      const trade = allTrades.find(t => t.id === tradeId);
-      return trade || null;
+      const response = await api.get<Trade>(`/trades/${tradeId}`);
+      return response.data;
     },
     enabled: !!tradeId,
     staleTime: 1 * 60 * 1000, // 1 minute
@@ -41,8 +54,8 @@ export const useTradeJournal = (tradeId: string) => {
   return useQuery({
     queryKey: ["trades", tradeId, "journal"],
     queryFn: async (): Promise<JournalEntry[]> => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return generateMockJournalEntries(tradeId, 12);
+      const response = await api.get<JournalEntry[]>(`/trades/${tradeId}/journal`);
+      return response.data;
     },
     enabled: !!tradeId,
     staleTime: 30 * 1000, // 30 seconds
@@ -50,12 +63,24 @@ export const useTradeJournal = (tradeId: string) => {
   });
 };
 
+export const useTradePerformanceDetails = (tradeId: string) => {
+  return useQuery({
+    queryKey: ["trades", tradeId, "details"],
+    queryFn: async (): Promise<TradePerformanceDetails> => {
+      const response = await api.get<TradePerformanceDetails>(`/trades/${tradeId}/details`);
+      return response.data;
+    },
+    enabled: !!tradeId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
 export const useTradingStatus = () => {
   return useQuery({
     queryKey: ["trading", "status"],
     queryFn: async (): Promise<TradingStatus> => {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      return mockTradingStatus;
+      const response = await api.get<TradingStatus>("/trading/status");
+      return response.data;
     },
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 10 * 1000, // Refetch every 10 seconds
@@ -66,9 +91,7 @@ export const useTradeMutations = () => {
 
   const approveTrade = useMutation({
     mutationFn: async (tradeId: string): Promise<void> => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // Simulate API call
-      console.log(`Approving trade ${tradeId}`);
+      await api.post(`/trades/${tradeId}/approve`);
     },
     onSuccess: (_, tradeId) => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
@@ -82,8 +105,7 @@ export const useTradeMutations = () => {
 
   const rejectTrade = useMutation({
     mutationFn: async (tradeId: string): Promise<void> => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      console.log(`Rejecting trade ${tradeId}`);
+      await api.post(`/trades/${tradeId}/reject`);
     },
     onSuccess: (_, tradeId) => {
       queryClient.invalidateQueries({ queryKey: ["trades"] });
@@ -97,8 +119,7 @@ export const useTradeMutations = () => {
 
   const pauseTrading = useMutation({
     mutationFn: async (reason?: string): Promise<void> => {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      console.log(`Pausing trading: ${reason}`);
+      await api.post("/trading/pause", { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trading", "status"] });
@@ -111,8 +132,7 @@ export const useTradeMutations = () => {
 
   const resumeTrading = useMutation({
     mutationFn: async (): Promise<void> => {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      console.log("Resuming trading");
+      await api.post("/trading/resume");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trading", "status"] });

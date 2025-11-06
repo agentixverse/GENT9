@@ -1,60 +1,80 @@
-"use client";
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../client";
 import { toast } from "sonner";
 import type { UserPolicy } from "../types";
-import { mockUserPolicy } from "../mock-data";
 
-export const usePolicy = () => {
+export const useSectorPolicy = (sectorId: number) => {
   return useQuery({
-    queryKey: ["policy"],
-    queryFn: async (): Promise<UserPolicy> => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return mockUserPolicy;
+    queryKey: ["policy", sectorId],
+    queryFn: async () => {
+      const { data } = await api.get<UserPolicy>(`/sectors/${sectorId}/policy`);
+      return data;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!sectorId,
   });
 };
 
-export const usePolicyMutations = () => {
+export const useSectorPolicyHistory = (sectorId: number) => {
+  return useQuery({
+    queryKey: ["policyHistory", sectorId],
+    queryFn: async () => {
+      const { data } = await api.get<UserPolicy[]>(`/sectors/${sectorId}/policy/history`);
+      return data;
+    },
+    enabled: !!sectorId,
+  });
+};
+
+export const useCreateSectorPolicy = (sectorId: number) => {
   const queryClient = useQueryClient();
 
-  const updatePolicy = useMutation({
-    mutationFn: async (policy: Partial<UserPolicy>): Promise<UserPolicy> => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      // Simulate API call
-      const updatedPolicy = { ...mockUserPolicy, ...policy };
-      console.log("Updating policy:", updatedPolicy);
-      return updatedPolicy;
+  return useMutation({
+    mutationFn: async (policyDocument: any) => {
+      const { data } = await api.post(`/sectors/${sectorId}/policy`, { policyDocument });
+      return data;
     },
-    onSuccess: (updatedPolicy) => {
-      queryClient.setQueryData(["policy"], updatedPolicy);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["policy", sectorId] });
+      queryClient.invalidateQueries({ queryKey: ["policyHistory", sectorId] });
+      toast.success("Policy created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to create policy");
+    },
+  });
+};
+
+export const useUpdateSectorPolicy = (sectorId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (policyDocument: any) => {
+      await api.put(`/sectors/${sectorId}/policy`, { policyDocument });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["policy", sectorId] });
       toast.success("Policy updated successfully");
     },
-    onError: () => {
-      toast.error("Failed to update policy");
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to update policy");
     },
   });
+};
 
-  const resetPolicy = useMutation({
-    mutationFn: async (): Promise<UserPolicy> => {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      console.log("Resetting policy to defaults");
-      return mockUserPolicy;
+export const useActivatePolicyVersion = (sectorId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (version: number) => {
+      await api.post(`/sectors/${sectorId}/policy/activate/${version}`);
     },
-    onSuccess: (resetPolicy) => {
-      queryClient.setQueryData(["policy"], resetPolicy);
-      toast.success("Policy reset to defaults");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["policy", sectorId] });
+      queryClient.invalidateQueries({ queryKey: ["policyHistory", sectorId] });
+      toast.success("Policy version activated");
     },
-    onError: () => {
-      toast.error("Failed to reset policy");
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to activate version");
     },
   });
-
-  return {
-    updatePolicy: updatePolicy.mutate,
-    resetPolicy: resetPolicy.mutate,
-    isUpdating: updatePolicy.isPending,
-    isResetting: resetPolicy.isPending,
-  };
 };

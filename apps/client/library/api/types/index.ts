@@ -29,10 +29,8 @@ export type {
 
 // User and Authentication Types
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  walletAddressEth?: string;
-  walletAddressSol?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,11 +55,14 @@ export interface RegisterData {
 // Trading and Portfolio Types
 export interface Trade {
   id: string;
-  userId: string;
+  userId: number;                // For frontend compatibility (derived from sector)
+  sectorId: number;              // Which sector this trade belongs to
+  orbId: number | null;          // Which orb (multi-chain collection) this trade is in
+  trading_pair: string | null;   // Trading pair (e.g., "ETH/USDC")
   tradeType: 'buy' | 'sell' | 'swap';
-  status: 'PROPOSED' | 'APPROVED' | 'EXECUTING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status: 'PROPOSED' | 'APPROVED' | 'EXECUTING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'ANALYZING' | 'REJECTED' | 'SUCCEEDED';
   isActive: boolean;
-  summary?: string;
+  summary?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,7 +78,7 @@ export interface TradeStrategy {
 
 export interface PortfolioSnapshot {
   id: string;
-  userId: string;
+  userId: number;
   totalValue: number;
   totalPnl: number;
   pnlPercentage: number;
@@ -89,7 +90,7 @@ export interface PortfolioSnapshot {
 // Journal Entry Types
 export interface JournalEntry {
   id: string;
-  userId: string;
+  userId: number;
   tradeActionId?: string;
   type: string;
   content: JournalEntryContent;
@@ -102,7 +103,7 @@ export interface JournalEntry {
 // AI Decision Types
 export interface AIDecision {
   id: string;
-  userId: string;
+  userId: number;
   decisionType: 'trade' | 'hold' | 'rebalance';
   reasoning: string;
   confidenceScore: number;
@@ -116,7 +117,8 @@ export interface AIDecision {
 // User Policy Types
 export interface UserPolicy {
   id: string;
-  userId: string;
+  sectorId: number;
+  userId: number;
   policyDocument: {
     risk_management: {
       max_position_size_percent: number;
@@ -147,6 +149,7 @@ export interface UserPolicy {
   isActive: boolean;
   aiCritique?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 // API Response Wrappers
@@ -208,4 +211,63 @@ export interface PerformanceMetrics {
   bestTrade: number;
   worstTrade: number;
   inflationBeatRate: number;
+}
+
+// Thread Registry Types
+export type ThreadType = "dex" | "bridge" | "lending" | "yield_farming" | "network_infra" | "other";
+
+export interface ThreadRegistryEntry {
+  id: string;
+  name: string;
+  version: string;
+  provider_id: string;
+  author: string;
+  thread_type: ThreadType;
+  supported_networks: string[];
+  logic_path: string;
+  ui_entry: string | null;
+  agx_manifest: {
+    description: string;
+    ui?: {
+      supports_iframe: boolean;
+      responsive: boolean;
+      dimensions: string;
+    };
+    storage_schema: Record<string, any>;
+    api_endpoints: Record<string, string>;
+    features: string[];
+    permissions?: string[];
+    created_at: string;
+  };
+  source_url: string;
+  discovered_at: string;
+  last_validated_at?: string;
+}
+
+export interface Thread {
+  id: number;
+  orb_id: number;
+  registry_id: string;
+  enabled: boolean;
+  config_json: Record<string, any>;
+  created_at: string;
+  updated_at?: string;
+  // Joined fields from thread_registry
+  registry_name?: string;
+  provider_id?: string;
+  thread_type?: ThreadType;
+  supported_networks?: string[];
+  agx_manifest?: ThreadRegistryEntry['agx_manifest'];
+}
+
+export interface CreateThreadDto {
+  orb_id: number;
+  registry_id: string;
+  enabled?: boolean;
+  config_json?: Record<string, any>;
+}
+
+export interface UpdateThreadDto {
+  enabled?: boolean;
+  config_json?: Record<string, any>;
 }
