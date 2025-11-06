@@ -94,8 +94,27 @@ const LoadingCard = () => (
   </Card>
 );
 
-export function SectionCards() {
-  const { data: metrics, isLoading } = useDashboardMetrics();
+interface SectionCardsProps {
+  sectorId: number | null;
+}
+
+export function SectionCards({ sectorId }: SectionCardsProps) {
+  const { data: metrics, isLoading } = useDashboardMetrics(sectorId!);
+
+  if (!sectorId) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 lg:px-6">
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle>No Sector Selected</CardTitle>
+            <CardDescription>
+              Please select a sector from the sidebar to view your dashboard
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

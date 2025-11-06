@@ -131,8 +131,6 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
     email: "",
     password: "",
     confirmPassword: "",
-    walletAddressEth: "",
-    walletAddressSol: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -161,8 +159,6 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
       register({
         email: formData.email,
         password: formData.password,
-        walletAddressEth: formData.walletAddressEth || undefined,
-        walletAddressSol: formData.walletAddressSol || undefined,
       });
     }
   };
@@ -177,12 +173,6 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Create account</CardTitle>
-        <CardDescription>
-          Join Agentix and start beating inflation with AI-powered trading
-        </CardDescription>
-      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -232,40 +222,6 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
             {errors.confirmPassword && (
               <Alert variant="destructive">
                 <AlertDescription>{errors.confirmPassword}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="eth-wallet">Ethereum Wallet (Optional)</Label>
-            <Input
-              id="eth-wallet"
-              type="text"
-              placeholder="0x..."
-              value={formData.walletAddressEth}
-              onChange={(e) => handleInputChange("walletAddressEth", e.target.value)}
-              className={errors.walletAddressEth ? "border-red-500" : ""}
-            />
-            {errors.walletAddressEth && (
-              <Alert variant="destructive">
-                <AlertDescription>{errors.walletAddressEth}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sol-wallet">Solana Wallet (Optional)</Label>
-            <Input
-              id="sol-wallet"
-              type="text"
-              placeholder="Solana address..."
-              value={formData.walletAddressSol}
-              onChange={(e) => handleInputChange("walletAddressSol", e.target.value)}
-              className={errors.walletAddressSol ? "border-red-500" : ""}
-            />
-            {errors.walletAddressSol && (
-              <Alert variant="destructive">
-                <AlertDescription>{errors.walletAddressSol}</AlertDescription>
               </Alert>
             )}
           </div>

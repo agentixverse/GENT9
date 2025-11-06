@@ -105,8 +105,12 @@ export const columns: ColumnDef<Trade>[] = [
   },
 ];
 
-export function DataTable() {
-  const { data: tradesData, isLoading } = useTrades();
+interface DataTableProps {
+  sectorId: number | null;
+}
+
+export function DataTable({ sectorId }: DataTableProps) {
+  const { data: tradesData, isLoading } = useTrades(sectorId!);
   const [data, setData] = React.useState<Trade[]>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
