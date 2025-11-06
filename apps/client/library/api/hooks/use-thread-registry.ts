@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../client";
+import api from "../client";
 import type { ThreadRegistryEntry, ThreadType } from "../types";
 
 /**
