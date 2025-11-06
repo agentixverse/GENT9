@@ -13,7 +13,18 @@ import {
 import { SidebarTrigger } from "@/library/components/atoms/sidebar";
 
 const formatPathSegment = (segment: string): string => {
+  // Map route names to display names
+  const routeNameMap: Record<string, string> = {
+    observatory: "Observatory",
+  };
+
   const withoutExtension = segment.replace(/\.[^/.]+$/, "");
+
+  // Check if there's a custom mapping
+  if (routeNameMap[withoutExtension.toLowerCase()]) {
+    return routeNameMap[withoutExtension.toLowerCase()];
+  }
+
   return withoutExtension
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -39,18 +50,14 @@ const Header = () => {
 
               return (
                 <Fragment key={href}>
-                  {index > 0 && (
-                    <BreadcrumbSeparator className="hidden md:block" />
-                  )}
+                  {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
                   {isLast ? (
                     <BreadcrumbItem>
                       <BreadcrumbPage>{formattedSegment}</BreadcrumbPage>
                     </BreadcrumbItem>
                   ) : (
                     <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href={href}>
-                        {formattedSegment}
-                      </BreadcrumbLink>
+                      <BreadcrumbLink href={href}>{formattedSegment}</BreadcrumbLink>
                     </BreadcrumbItem>
                   )}
                 </Fragment>

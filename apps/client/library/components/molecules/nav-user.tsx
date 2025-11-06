@@ -2,6 +2,7 @@
 
 import { BadgeCheck, Bell, BotOff, ChevronsUpDown, LogOut } from "lucide-react";
 
+import { useAuth } from "@/library/api/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/library/components/atoms/avatar";
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { logout } = useAuth();
 
   return (
     <SidebarMenu>
@@ -41,7 +43,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">K</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user.name.substring(0, 1)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
@@ -60,7 +64,9 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {user.name.substring(0, 1)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>
@@ -84,7 +90,7 @@ export function NavUser({
               <BotOff />
               Disable Platform
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>
               <LogOut />
               Log Out
             </DropdownMenuItem>
