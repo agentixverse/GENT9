@@ -26,20 +26,6 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(1, "Please confirm your password"),
-    walletAddressEth: z
-      .string()
-      .optional()
-      .refine(
-        (val) => !val || /^0x[a-fA-F0-9]{40}$/.test(val),
-        "Please enter a valid Ethereum address (0x...)"
-      ),
-    walletAddressSol: z
-      .string()
-      .optional()
-      .refine(
-        (val) => !val || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(val),
-        "Please enter a valid Solana address"
-      ),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
