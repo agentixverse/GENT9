@@ -3,6 +3,7 @@ import { ColumnType, Generated, JSONColumnType } from "kysely";
 import { JournalEntryContent, JournalEntryType } from "@/types/journal";
 import { ChainType } from "@/types/orb";
 import { PolicyDocument } from "@/types/policy";
+import { ThreadRegistryConfig } from "@/types/thread-configs";
 
 export interface UsersTable {
   id: Generated<number>;
@@ -37,7 +38,7 @@ export interface OrbsTable {
   id: Generated<number>;
   sector_id: number;
   name: string;
-  chain: ChainType;
+  network_thread_id: number | null;
   wallet_address: string;
   privy_wallet_id: string;
   asset_pairs: JSONColumnType<Record<string, number>>;
@@ -47,14 +48,41 @@ export interface OrbsTable {
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
 }
 
+export interface ThreadRegistryTable {
+  id: string; // Content hash
+  name: string;
+  version: string;
+  provider_id: string;
+  author: string;
+  thread_type: "dex" | "bridge" | "lending" | "yield_farming" | "network_infra" | "other";
+  supported_networks: JSONColumnType<string[]>;
+  logic_path: string;
+  ui_entry: string | null;
+  agx_manifest: JSONColumnType<{
+    description: string;
+    ui?: {
+      supports_iframe: boolean;
+      responsive: boolean;
+      dimensions: string;
+    };
+    storage_schema: Record<string, any>;
+    api_endpoints: Record<string, string>;
+    features: string[];
+    permissions?: string[];
+    created_at: string;
+  }>;
+  source_url: string;
+  discovered_at: ColumnType<Date, string | undefined, never>;
+  last_validated_at: ColumnType<Date, string | undefined, string | undefined>;
+  config_json: JSONColumnType<ThreadRegistryConfig | null>;
+}
+
 export interface ThreadsTable {
   id: Generated<number>;
   orb_id: number;
-  type: "dex" | "bridge" | "lending" | "yield_farming" | "network_infra" | "other";
-  provider_id: string;
+  registry_id: string;
   enabled: boolean;
   config_json: JSONColumnType<Record<string, any>>;
-  description: string | null;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
 }
@@ -157,6 +185,7 @@ export interface DB {
   sectors: SectorsTable;
   sector_policies: SectorPoliciesTable;
   orbs: OrbsTable;
+  thread_registry: ThreadRegistryTable;
   threads: ThreadsTable;
   trade_actions: TradeActionsTable;
   trade_strategies: TradeStrategiesTable;

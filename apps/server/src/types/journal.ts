@@ -1,4 +1,4 @@
-import { ChainType } from "@/types/orb";
+import { ChainType } from "@/library/types/orb";
 
 export type JournalEntryType =
   // Research Phase - Data Retrieval

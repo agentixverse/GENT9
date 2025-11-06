@@ -55,6 +55,33 @@ export async function up(db: Kysely<DB>): Promise<void> {
     .columns(["sector_id", "is_active"])
     .execute();
 
+  // Thread registry table (discovered thread providers)
+  await db.schema
+    .createTable("thread_registry")
+    .addColumn("id", "text", (col) => col.primaryKey()) // Content hash
+    .addColumn("name", "text", (col) => col.notNull())
+    .addColumn("version", "text", (col) => col.notNull())
+    .addColumn("provider_id", "text", (col) => col.notNull())
+    .addColumn("author", "text", (col) => col.notNull())
+    .addColumn("thread_type", "text", (col) =>
+      col
+        .notNull()
+        .check(
+          sql`thread_type IN ('dex', 'bridge', 'lending', 'yield_farming', 'network_infra', 'other')`
+        )
+    )
+    .addColumn("supported_networks", "text", (col) => col.notNull()) // JSON array
+    .addColumn("logic_path", "text", (col) => col.notNull())
+    .addColumn("ui_entry", "text") // Nullable
+    .addColumn("agx_manifest", "text", (col) => col.notNull()) // JSON
+    .addColumn("source_url", "text", (col) => col.notNull())
+    .addColumn("discovered_at", "text", (col) =>
+      col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`)
+    )
+    .addColumn("last_validated_at", "text")
+    .addColumn("config_json", "text") // JSON for system-managed config and cached data
+    .execute();
+
   // Orbs table
   await db.schema
     .createTable("orbs")
@@ -63,11 +90,7 @@ export async function up(db: Kysely<DB>): Promise<void> {
       col.notNull().references("sectors.id").onDelete("cascade")
     )
     .addColumn("name", "text", (col) => col.notNull())
-    .addColumn("chain", "text", (col) =>
-      col
-        .notNull()
-        .check(sql`chain IN ('ethereum', 'solana', 'sei', 'hyperliquid', 'icp', 'paper')`)
-    )
+    .addColumn("network_thread_id", "integer") // FK added after threads table
     .addColumn("wallet_address", "text", (col) => col.notNull())
     .addColumn("privy_wallet_id", "text", (col) => col.notNull())
     .addColumn("asset_pairs", "text", (col) => col.notNull()) // JSON
@@ -79,28 +102,33 @@ export async function up(db: Kysely<DB>): Promise<void> {
     .addColumn("updated_at", "text")
     .execute();
 
-  // Threads table
+  // Threads table (orb-specific thread instances)
   await db.schema
     .createTable("threads")
     .addColumn("id", "integer", (col) => col.primaryKey().autoIncrement())
     .addColumn("orb_id", "integer", (col) =>
       col.notNull().references("orbs.id").onDelete("cascade")
     )
-    .addColumn("type", "text", (col) =>
-      col
-        .notNull()
-        .check(
-          sql`type IN ('dex', 'bridge', 'lending', 'yield_farming', 'network_infra', 'other')`
-        )
+    .addColumn("registry_id", "text", (col) =>
+      col.notNull().references("thread_registry.id").onDelete("restrict")
     )
-    .addColumn("provider_id", "text", (col) => col.notNull())
     .addColumn("enabled", "integer", (col) => col.notNull().defaultTo(1)) // boolean
-    .addColumn("config_json", "text", (col) => col.notNull()) // JSON
-    .addColumn("description", "text")
+    .addColumn("config_json", "text", (col) => col.notNull()) // JSON (user overrides only)
     .addColumn("created_at", "text", (col) =>
       col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`)
     )
     .addColumn("updated_at", "text")
+    .execute();
+
+  // Add FK from orbs.network_thread_id to threads.id (after threads table exists)
+  await db.schema
+    .alterTable("orbs")
+    .addForeignKeyConstraint(
+      "orbs_network_thread_fk",
+      ["network_thread_id"],
+      "threads",
+      ["id"]
+    )
     .execute();
 
   // Trade actions table
@@ -261,6 +289,7 @@ export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable("trade_actions").ifExists().execute();
   await db.schema.dropTable("threads").ifExists().execute();
   await db.schema.dropTable("orbs").ifExists().execute();
+  await db.schema.dropTable("thread_registry").ifExists().execute();
   await db.schema.dropTable("sector_policies").ifExists().execute();
   await db.schema.dropTable("sectors").ifExists().execute();
   await db.schema.dropTable("users").ifExists().execute();
