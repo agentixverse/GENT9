@@ -2,4 +2,5 @@
 backtesting==0.3.3
 pandas>=1.5.0
 numpy>=1.23.0
-TA-Lib>=0.4.24
+RestrictedPython>=6.0
+# TA-Lib>=0.4.24  # Commented - requires system deps (brew install ta-lib)
