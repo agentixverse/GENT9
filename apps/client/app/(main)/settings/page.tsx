@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useAuth } from "@/library/api/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/library/components/atoms/card";
+import { Badge } from "@/library/components/atoms/badge";
 import { Button } from "@/library/components/atoms/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/library/components/atoms/card";
 import { Input } from "@/library/components/atoms/input";
 import { Label } from "@/library/components/atoms/label";
 import {
@@ -13,48 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/library/components/atoms/select";
-import { Switch } from "@/library/components/atoms/switch";
 import { Separator } from "@/library/components/atoms/separator";
-import { Badge } from "@/library/components/atoms/badge";
 import { Skeleton } from "@/library/components/atoms/skeleton";
-import {
-  User,
-  Wallet,
-  Palette,
-  Bell,
-  Shield,
-  Moon,
-  Sun,
-  Monitor,
-  Eye,
-  EyeOff,
-  Key,
-  Smartphone,
-  Mail,
-  Globe,
-  AlertTriangle,
-  CheckCircle,
-  Copy,
-  ExternalLink,
-} from "lucide-react";
+import { Switch } from "@/library/components/atoms/switch";
+import { Bell, Mail, Monitor, Moon, Palette, Smartphone, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 
 export default function SettingsPage() {
   const { user, isLoading } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  const [showApiKey, setShowApiKey] = useState(false);
   const [notifications, setNotifications] = useState({
     trades: true,
-    portfolio: true,
-    security: true,
-    marketing: false,
   });
 
   const [userSettings, setUserSettings] = useState({
     email: user?.email || "",
-    walletAddressEth: user?.walletAddressEth || "",
-    walletAddressSol: user?.walletAddressSol || "",
     language: "en",
     timezone: "UTC",
     currency: "USD",
@@ -104,12 +79,6 @@ export default function SettingsPage() {
         setUserSettings={setUserSettings}
       />
 
-      {/* Wallet Management - Primary */}
-      <WalletManagementSection
-        userSettings={userSettings}
-        setUserSettings={setUserSettings}
-      />
-
       {/* Theme & Preferences - Secondary */}
       <ThemePreferencesSection
         theme={theme}
@@ -123,9 +92,6 @@ export default function SettingsPage() {
         notifications={notifications}
         setNotifications={setNotifications}
       />
-
-      {/* Security Settings - Tertiary */}
-      <SecuritySettingsSection showApiKey={showApiKey} setShowApiKey={setShowApiKey} />
     </div>
   );
 }
@@ -257,112 +223,6 @@ function AccountSettingsSection({
     </Card>
   );
 }
-function WalletManagementSection({
-  userSettings,
-  setUserSettings,
-}: {
-  userSettings: any;
-  setUserSettings: (settings: any) => void;
-}) {
-  return (
-    <Card className="border-green-200 dark:border-green-800">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Wallet className="h-5 w-5 text-green-500" />
-          Wallet Management
-          <Badge variant="secondary" className="text-xs">
-            Primary
-          </Badge>
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Configure your crypto wallet addresses for trading
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="eth-wallet">Ethereum Wallet Address</Label>
-            <div className="flex gap-2">
-              <Input
-                id="eth-wallet"
-                value={userSettings.walletAddressEth}
-                onChange={(e) =>
-                  setUserSettings({
-                    ...userSettings,
-                    walletAddressEth: e.target.value,
-                  })
-                }
-                placeholder="0x..."
-                className="font-mono text-sm"
-              />
-              <Button variant="outline" size="sm">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Your Ethereum wallet for ERC-20 token trading
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="sol-wallet">Solana Wallet Address</Label>
-            <div className="flex gap-2">
-              <Input
-                id="sol-wallet"
-                value={userSettings.walletAddressSol}
-                onChange={(e) =>
-                  setUserSettings({
-                    ...userSettings,
-                    walletAddressSol: e.target.value,
-                  })
-                }
-                placeholder="Base58 address..."
-                className="font-mono text-sm"
-              />
-              <Button variant="outline" size="sm">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Your Solana wallet for SPL token trading
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Security Notice
-              </h4>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                Your private keys are never stored on our servers. We only use wallet
-                addresses for transaction routing.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div className="flex justify-between items-center">
-          <div className="space-y-1">
-            <h4 className="text-sm font-medium">Wallet Connection Status</h4>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">Connected and verified</span>
-            </div>
-          </div>
-          <Button variant="outline">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View on Explorer
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 function ThemePreferencesSection({
   theme,
   setTheme,
@@ -457,26 +317,6 @@ function ThemePreferencesSection({
               </Select>
             </div>
           </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Compact Mode</Label>
-              <p className="text-xs text-muted-foreground">
-                Reduce spacing and padding for a more compact interface
-              </p>
-            </div>
-            <Switch />
-          </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Animations</Label>
-              <p className="text-xs text-muted-foreground">
-                Enable smooth transitions and animations
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -522,60 +362,6 @@ function NotificationsSection({
               }
             />
           </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Portfolio Updates</Label>
-              <p className="text-xs text-muted-foreground">
-                Daily portfolio performance and milestone notifications
-              </p>
-            </div>
-            <Switch
-              checked={notifications.portfolio}
-              onCheckedChange={(checked) =>
-                setNotifications({
-                  ...notifications,
-                  portfolio: checked,
-                })
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Security Alerts</Label>
-              <p className="text-xs text-muted-foreground">
-                Important security notifications and login alerts
-              </p>
-            </div>
-            <Switch
-              checked={notifications.security}
-              onCheckedChange={(checked) =>
-                setNotifications({
-                  ...notifications,
-                  security: checked,
-                })
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Marketing Communications</Label>
-              <p className="text-xs text-muted-foreground">
-                Product updates, tips, and promotional content
-              </p>
-            </div>
-            <Switch
-              checked={notifications.marketing}
-              onCheckedChange={(checked) =>
-                setNotifications({
-                  ...notifications,
-                  marketing: checked,
-                })
-              }
-            />
-          </div>
         </div>
 
         <Separator />
@@ -603,116 +389,6 @@ function NotificationsSection({
                 </div>
               </div>
               <Switch />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-function SecuritySettingsSection({
-  showApiKey,
-  setShowApiKey,
-}: {
-  showApiKey: boolean;
-  setShowApiKey: (show: boolean) => void;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-red-500" />
-          Security Settings
-          <Badge variant="outline" className="text-xs bg-slate-100 text-slate-600">
-            Tertiary
-          </Badge>
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Advanced security configuration and API access
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>API Key</Label>
-            <div className="flex gap-2">
-              <Input
-                type={showApiKey ? "text" : "password"}
-                value="sk-1234567890abcdef1234567890abcdef"
-                readOnly
-                className="font-mono text-sm"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowApiKey(!showApiKey)}
-              >
-                {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-              <Button variant="outline" size="sm">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Use this API key to integrate with external applications
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Two-Factor Authentication</Label>
-              <p className="text-xs text-muted-foreground">
-                Add an extra layer of security to your account
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              <Key className="h-4 w-4 mr-2" />
-              Setup 2FA
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Login Sessions</Label>
-              <p className="text-xs text-muted-foreground">
-                Manage active sessions and devices
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              <Globe className="h-4 w-4 mr-2" />
-              View Sessions
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="text-sm font-medium text-red-800 dark:text-red-200">
-                Danger Zone
-              </h4>
-              <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                These actions are irreversible. Please proceed with caution.
-              </p>
-              <div className="mt-3 space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  Reset API Key
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 border-red-300 hover:bg-red-50 ml-2"
-                >
-                  Delete Account
-                </Button>
-              </div>
             </div>
           </div>
         </div>

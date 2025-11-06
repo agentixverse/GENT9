@@ -1,37 +1,35 @@
 "use client";
 
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Brain,
+  CheckCircle,
+  Clock,
+  Send,
+  Square,
+} from "lucide-react";
 import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+
 import {
   useTradeDetails,
   useTradeJournal,
   useTradeMutations,
 } from "@/library/api/hooks/use-trades";
-import { Card, CardContent, CardHeader, CardTitle } from "@/library/components/atoms/card";
-import { Button } from "@/library/components/atoms/button";
-import { Badge } from "@/library/components/atoms/badge";
-import { Input } from "@/library/components/atoms/input";
-import { Skeleton } from "@/library/components/atoms/skeleton";
-import {
-  Activity,
-  Brain,
-  ChevronDown,
-  ChevronRight,
-  Send,
-  Square,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  BarChart3,
-  ArrowLeft,
-} from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import type {
-  JournalEntry,
   AIAnalysisContent,
   AIDecisionContent,
+  JournalEntry,
   TradeExecutionContent,
 } from "@/library/api/types";
+import { Badge } from "@/library/components/atoms/badge";
+import { Button } from "@/library/components/atoms/button";
+import { Card, CardContent } from "@/library/components/atoms/card";
+import { Input } from "@/library/components/atoms/input";
+import { Skeleton } from "@/library/components/atoms/skeleton";
+import { EmptyState } from "@/library/components/molecules/empty-state";
 
 export default function ActionDetailPage() {
   const params = useParams();
@@ -83,13 +81,12 @@ export default function ActionDetailPage() {
 
   if (!trade) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Trade not found</p>
-          </CardContent>
-        </Card>
+      <div className="flex flex-1 flex-col gap-4 p-4 justify-center">
+        <EmptyState
+          icon={AlertTriangle}
+          title="Trade Not Found"
+          description="The action you're looking for doesn't exist or has been removed."
+        />
       </div>
     );
   }
@@ -117,7 +114,7 @@ export default function ActionDetailPage() {
     if (userInput.trim()) {
       setUserInput("");
       setIsGenerating(true);
-      
+
       // Auto scroll when sending message
       setTimeout(scrollToBottom, 100);
 
@@ -175,16 +172,18 @@ export default function ActionDetailPage() {
 
       {/* Chat-style Journal */}
       <div ref={chatContainerRef} className="flex-1 overflow-auto p-4 space-y-4">
-        {journalEntries?.map((entry) => (
-          <JournalEntryCard key={entry.id} entry={entry} />
-        ))}
-
-        {journalEntries?.length === 0 && (
-          <div className="text-center py-12">
-            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No conversation started yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Ask a question or provide guidance below</p>
+        {journalEntries?.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <EmptyState
+              icon={Activity}
+              title="No Conversation Yet"
+              description="Ask a question or provide guidance to the AI below to start discussing this trade"
+            />
           </div>
+        ) : (
+          journalEntries?.map((entry) => (
+            <JournalEntryCard key={entry.id} entry={entry} />
+          ))
         )}
 
         {isGenerating && (
@@ -202,7 +201,7 @@ export default function ActionDetailPage() {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -239,7 +238,6 @@ export default function ActionDetailPage() {
 }
 
 function JournalEntryCard({ entry }: { entry: JournalEntry }) {
-
   const getEntryIcon = (entryType: string) => {
     switch (entryType) {
       case "AI_ANALYSIS":
@@ -286,32 +284,45 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
     }
   };
 
-  const isAI = entry.type.startsWith('AI_') || entry.type === 'TRADE_EXECUTION' || entry.type === 'MARKET_DATA' || entry.type === 'RISK_ANALYSIS' || entry.type === 'POSITION_MONITOR';
-  const isUser = entry.type === 'USER_ACTION';
-  
+  const isAI =
+    entry.type.startsWith("AI_") ||
+    entry.type === "TRADE_EXECUTION" ||
+    entry.type === "MARKET_DATA" ||
+    entry.type === "RISK_ANALYSIS" ||
+    entry.type === "POSITION_MONITOR";
+  const isUser = entry.type === "USER_ACTION";
+
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
       {/* Avatar */}
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-        isAI ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400' : 
-        isUser ? 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400' :
-        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-      }`}>
+      <div
+        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+          isAI
+            ? "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400"
+            : isUser
+            ? "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400"
+            : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+        }`}
+      >
         {getEntryIcon(entry.type)}
       </div>
-      
+
       {/* Message Bubble */}
-      <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block rounded-lg px-4 py-3 ${
-          isAI ? 'bg-blue-50 dark:bg-blue-950/50' :
-          isUser ? 'bg-green-50 dark:bg-green-950/50' :
-          'bg-gray-50 dark:bg-gray-900/50'
-        } text-foreground`}>
+      <div className={`flex-1 max-w-[80%] ${isUser ? "text-right" : ""}`}>
+        <div
+          className={`inline-block rounded-lg px-4 py-3 ${
+            isAI
+              ? "bg-blue-50 dark:bg-blue-950/50"
+              : isUser
+              ? "bg-green-50 dark:bg-green-950/50"
+              : "bg-gray-50 dark:bg-gray-900/50"
+          } text-foreground`}
+        >
           {/* Header */}
-          <div className={`flex items-center gap-2 mb-2 ${isUser ? 'flex-row-reverse' : ''}`}>
-            <span className="text-xs font-medium">
-              {getEntryTypeLabel(entry.type)}
-            </span>
+          <div
+            className={`flex items-center gap-2 mb-2 ${isUser ? "flex-row-reverse" : ""}`}
+          >
+            <span className="text-xs font-medium">{getEntryTypeLabel(entry.type)}</span>
             {entry.confidenceScore && (
               <Badge variant="secondary" className="text-xs">
                 {Math.round(entry.confidenceScore * 100)}% confident
@@ -324,12 +335,10 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
               })}
             </span>
           </div>
-          
+
           {/* Main Content */}
-          <div className="text-sm leading-relaxed mb-3">
-            {entry.content.message}
-          </div>
-          
+          <div className="text-sm leading-relaxed mb-3">{entry.content.message}</div>
+
           {/* Details - Always Visible */}
           <div className="space-y-3 border-t border-border/20 pt-3">
             {entry.type === "AI_ANALYSIS" && (
@@ -367,7 +376,7 @@ function AIAnalysisDetails({ content }: { content: AIAnalysisContent }) {
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(content.key_metrics).map(([key, value]) => (
               <div key={key} className="bg-muted/50 rounded-md p-2 border border-border/20">
-                <div className="text-xs opacity-70 capitalize">{key.replace('_', ' ')}</div>
+                <div className="text-xs opacity-70 capitalize">{key.replace("_", " ")}</div>
                 <div className="text-sm font-semibold">{String(value)}</div>
               </div>
             ))}
@@ -394,7 +403,7 @@ function AIDecisionDetails({ content }: { content: AIDecisionContent }) {
         <div>
           <div className="text-xs font-semibold opacity-80 mb-2">Affected Positions</div>
           <div className="flex flex-wrap gap-1">
-            {content.affected_positions.map((position, idx) => (
+            {content.affected_positions.map((position: string, idx: number) => (
               <Badge key={idx} variant="secondary" className="text-xs">
                 {position}
               </Badge>

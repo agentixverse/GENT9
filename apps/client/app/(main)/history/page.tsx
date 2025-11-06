@@ -1,7 +1,7 @@
 "use client";
 
-import { usePortfolioHistory } from "@/library/api/hooks/use-portfolio";
-import { useTrades } from "@/library/api/hooks/use-trades";
+import { usePortfolioHistory, usePerformanceMetrics } from "@/library/api/hooks/use-portfolio";
+import { useTrades, useTradePerformanceDetails } from "@/library/api/hooks/use-trades";
 import type { PerformanceMetrics, Trade } from "@/library/api/types";
 import { Badge } from "@/library/components/atoms/badge";
 import { Button } from "@/library/components/atoms/button";
@@ -30,27 +30,14 @@ import { useState } from "react";
 export default function HistoryPage() {
   const { data: trades, isLoading: tradesLoading } = useTrades();
   const { data: portfolioHistory, isLoading: portfolioLoading } = usePortfolioHistory();
+  const { data: performanceMetrics, isLoading: metricsLoading } = usePerformanceMetrics();
 
   const [expandedTrade, setExpandedTrade] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<string>("30d");
 
-  // Calculate performance metrics from data
-  const performanceMetrics: PerformanceMetrics = {
-    totalReturn: 25.0,
-    annualizedReturn: 32.5,
-    sharpeRatio: 1.85,
-    maxDrawdown: 8.2,
-    winRate: 78.5,
-    totalTrades: trades?.length || 0,
-    avgTradeReturn: 2.3,
-    bestTrade: 12.8,
-    worstTrade: -3.2,
-    inflationBeatRate: 18.2,
-  };
-
-  if (tradesLoading || portfolioLoading) {
+  if (tradesLoading || portfolioLoading || metricsLoading) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-4">
         <h1 className="text-2xl font-bold">Trading History</h1>
@@ -83,7 +70,7 @@ export default function HistoryPage() {
       </div>
 
       {/* Performance Metrics Cards */}
-      <PerformanceMetricsSection metrics={performanceMetrics} />
+      {performanceMetrics && <PerformanceMetricsSection metrics={performanceMetrics} />}
 
       {/* Trade History Filters */}
       <TradeHistoryFilters
@@ -361,6 +348,11 @@ function TradeHistoryTable({
 }
 
 function TradeDetailsExpanded({ trade }: { trade: Trade }) {
+  const { data: details } = useTradePerformanceDetails(trade.id);
+
+  const pnlColor = details && details.pnl >= 0 ? "text-emerald-600" : "text-red-600";
+  const pnlSign = details && details.pnl >= 0 ? "+" : "";
+
   return (
     <div className="border-t bg-muted/20 p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -413,24 +405,28 @@ function TradeDetailsExpanded({ trade }: { trade: Trade }) {
 
         <div className="space-y-2">
           <h4 className="font-medium text-sm">Performance</h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">P&L:</span>
-              <span className="text-emerald-600 font-medium">
-                +${(Math.random() * 500 + 50).toFixed(2)}
-              </span>
+          {details ? (
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">P&L:</span>
+                <span className={`font-medium ${pnlColor}`}>
+                  {pnlSign}${details.pnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Return:</span>
+                <span className={`font-medium ${pnlColor}`}>
+                  {pnlSign}{details.returnPercent.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fee:</span>
+                <span>${details.fee.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Return:</span>
-              <span className="text-emerald-600 font-medium">
-                +{(Math.random() * 10 + 1).toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Fee:</span>
-              <span>${(Math.random() * 10 + 1).toFixed(2)}</span>
-            </div>
-          </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          )}
         </div>
       </div>
 

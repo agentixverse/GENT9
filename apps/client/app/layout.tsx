@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 
-import RootProvider from "@/library/providers";
 import { Toaster } from "@/library/components/atoms/sonner";
-import { cn } from "@/library/utils";
+import RootProvider from "@/library/providers";
 import "@/library/styles/globals.css";
+import { cn } from "@/library/utils";
 
 const inter = Inter({ subsets: ["latin"], preload: true });
+const outfit = Outfit({ subsets: ["latin"], preload: true, variable: "--font-outfit" });
 
 export const metadata: Metadata = {
   title: "Agentix - AI-Powered Trading Platform",
   icons: "/favicon.ico",
-  description: "Beat inflation with AI-powered crypto trading. Automated trading that works while you sleep.",
+  description:
+    "Beat inflation with AI-powered crypto trading. Automated trading that works while you sleep.",
 };
 
 export default function RootLayout({
@@ -21,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className)}>
+      <body className={cn(inter.className, outfit.variable)}>
         <RootProvider>
           {children}
           <Toaster />

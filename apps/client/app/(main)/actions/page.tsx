@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTrades } from "@/library/api/hooks/use-trades";
+import { useAggregateTrades } from "@/library/api/hooks/use-trades";
 import { Badge } from "@/library/components/atoms/badge";
 import { Card, CardContent } from "@/library/components/atoms/card";
 import { Skeleton } from "@/library/components/atoms/skeleton";
 import { Activity, TrendingUp, TrendingDown, Clock } from "lucide-react";
 
 export default function ActionsPage() {
-  const { data: trades, isLoading, error } = useTrades();
+  const { data: trades, isLoading, error } = useAggregateTrades();
 
   if (isLoading) {
     return (
