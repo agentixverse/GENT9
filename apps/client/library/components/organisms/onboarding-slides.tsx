@@ -829,7 +829,7 @@ export function OnboardingSlides({ onComplete, onBack }: OnboardingSlidesProps) 
           });
 
           await createOrbMutation.mutateAsync({
-            sectorId: sector.id,
+            sector_id: sector.id,
             name: orb.name,
             network_thread_registry_id: orb.network_thread_registry_id!,
             asset_pairs: assetPairs,
