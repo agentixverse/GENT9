@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/library/api/hooks/use-auth";
-import { WelcomeScreen } from "@/library/components/organisms/welcome-screen";
+import { OnboardingSlides } from "@/library/components/organisms/onboarding-slides";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default function AuthPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+export default function OnboardingPage() {
+  const { isAuthenticated, isLoading, register, isRegisterLoading } = useAuth();
   const router = useRouter();
 
   // Redirect if already authenticated
@@ -24,13 +24,13 @@ export default function AuthPage() {
     );
   }
 
-  const handleGetStarted = () => {
-    router.push("/onboarding");
+  const handleSlidesComplete = () => {};
+
+  const handleBackToWelcome = () => {
+    router.push("/");
   };
 
-  const handleLogin = () => {
-    router.push("/login");
-  };
-
-  return <WelcomeScreen onGetStarted={handleGetStarted} onLogin={handleLogin} />;
+  return (
+    <OnboardingSlides onComplete={handleSlidesComplete} onBack={handleBackToWelcome} />
+  );
 }

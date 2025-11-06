@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/library/api/hooks/use-auth";
-import { WelcomeScreen } from "@/library/components/organisms/welcome-screen";
+import { LoginForm } from "@/library/components/organisms/auth-forms";
 
-export default function AuthPage() {
+export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -24,13 +24,15 @@ export default function AuthPage() {
     );
   }
 
-  const handleGetStarted = () => {
-    router.push("/onboarding");
+  const handleToggleToSignup = () => {
+    router.push("/");
   };
 
-  const handleLogin = () => {
-    router.push("/login");
-  };
-
-  return <WelcomeScreen onGetStarted={handleGetStarted} onLogin={handleLogin} />;
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <LoginForm onToggleMode={handleToggleToSignup} />
+      </div>
+    </div>
+  );
 }
