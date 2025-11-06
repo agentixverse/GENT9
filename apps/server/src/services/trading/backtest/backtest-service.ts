@@ -1,4 +1,5 @@
 import { db } from "@/infrastructure/database/turso-connection";
+import { backtestQueue } from "@/infrastructure/queues/config";
 import { Strategy, StrategyRevision } from "@/models/Strategy";
 
 export const backtestService = {
@@ -67,7 +68,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     const newRevision: StrategyRevision = {
       code,
       created_at: new Date().toISOString(),
@@ -114,7 +115,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     return revisions[strategy.active_revision_index] || null;
   },
 
@@ -128,7 +129,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     if (revisionIndex < 0 || revisionIndex >= revisions.length) {
       throw new Error(
         `Invalid revision index ${revisionIndex}. Must be between 0 and ${revisions.length - 1}`
@@ -162,6 +163,8 @@ export const backtestService = {
       endDate: string;
       initialCapital: number;
       commission: number;
+      coinId?: string;
+      days?: number;
     }
   ): Promise<Strategy> {
     const strategy = await this.getStrategyById(strategyId, userId);
@@ -169,16 +172,31 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     if (revisionIndex < 0 || revisionIndex >= revisions.length) {
       throw new Error(
         `Invalid revision index ${revisionIndex}. Must be between 0 and ${revisions.length - 1}`
       );
     }
 
-    // TODO: Check queue limits (1 per user, 2 system-wide)
-    // This will be implemented when queue is set up
+    // Check queue limits (1 per user, 2 system-wide)
+    const activeJobs = await backtestQueue.getActive();
+    const waitingJobs = await backtestQueue.getWaiting();
+    const allJobs = [...activeJobs, ...waitingJobs];
 
+    // Check system-wide limit (2 concurrent backtests)
+    const activeCount = activeJobs.length;
+    if (activeCount >= 2) {
+      throw new Error("System backtest limit reached. Maximum 2 backtests can run simultaneously.");
+    }
+
+    // Check per-user limit (1 backtest per user)
+    const userJobs = allJobs.filter((job) => job.data?.userId === userId);
+    if (userJobs.length > 0) {
+      throw new Error("You already have a backtest queued or running. Please wait for it to complete.");
+    }
+
+    // Update strategy status to queued
     await db
       .updateTable("strategies")
       .where("id", "=", strategyId)
@@ -187,6 +205,20 @@ export const backtestService = {
         updated_at: new Date().toISOString(),
       })
       .execute();
+
+    // Add job to queue
+    await backtestQueue.add(
+      `backtest-${strategyId}-${revisionIndex}`,
+      {
+        strategyId,
+        userId,
+        revisionIndex,
+        config,
+      },
+      {
+        jobId: `backtest-${strategyId}-${revisionIndex}-${Date.now()}`,
+      }
+    );
 
     return await db
       .selectFrom("strategies")
@@ -205,7 +237,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     const revision = revisions[revisionIndex];
     if (!revision) {
       throw new Error(`Revision ${revisionIndex} not found`);
@@ -260,7 +292,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     const revision = revisions[revisionIndex];
     if (!revision) {
       throw new Error(`Revision ${revisionIndex} not found`);
@@ -304,7 +336,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     const revision = revisions[revisionIndex];
     if (!revision) {
       throw new Error(`Revision ${revisionIndex} not found`);
@@ -347,7 +379,7 @@ export const backtestService = {
       throw new Error(`Strategy ${strategyId} not found for user ${userId}`);
     }
 
-    const revisions: StrategyRevision[] = JSON.parse(strategy.revisions as string);
+    const revisions = strategy.revisions as unknown as StrategyRevision[];
     const revision = revisions[revisionIndex];
     if (!revision) {
       throw new Error(`Revision ${revisionIndex} not found`);

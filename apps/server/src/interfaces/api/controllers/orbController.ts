@@ -7,7 +7,7 @@ import { sanitizeOrbForResponse, sanitizeOrbsForResponse } from "@/utils/orb";
 interface CreateOrbRequestBody {
   sector_id: number;
   name: string;
-  chain: ChainType;
+  network_thread_registry_id: string;
   asset_pairs: Record<string, number>;
   config_json?: Record<string, any>;
   context?: string;

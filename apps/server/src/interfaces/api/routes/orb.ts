@@ -4,33 +4,21 @@ import { z } from "zod";
 import orbController from "@/interfaces/api/controllers/orbController";
 import { protect } from "@/interfaces/api/middleware/auth";
 import { validate } from "@/interfaces/api/middleware/validation";
-import { CHAINS } from "@/types/orb";
 
 const router = Router();
 
-// Custom validator for asset pairs
-const validateAssetPairs = (data: {
-  chain: string;
-  asset_pairs: Record<string, number>;
-}) => {
-  // TODO: Implement chain-specific asset pair validation logic
-  return true;
-};
-
 const createOrbSchema = z.object({
-  body: z
-    .object({
-      sector_id: z.number().int().positive({ message: "Valid sector ID is required" }),
-      name: z.string().min(1, { message: "Name is required" }),
-      chain: z.enum(CHAINS, { message: "Invalid chain type" }),
-      asset_pairs: z.record(z.number().min(0).max(100), {
-        message: "Asset pairs are required",
-      }),
-      config_json: z.record(z.any()).optional(),
-    })
-    .refine(validateAssetPairs, {
-      message: "Invalid asset pairs for the specified chain",
+  body: z.object({
+    sector_id: z.number().int().positive({ message: "Valid sector ID is required" }),
+    name: z.string().min(1, { message: "Name is required" }),
+    network_thread_registry_id: z.string().min(1, {
+      message: "Network thread registry ID is required"
     }),
+    asset_pairs: z.record(z.number().min(0).max(100), {
+      message: "Asset pairs are required",
+    }),
+    config_json: z.record(z.any()).optional(),
+  }),
 });
 
 const updateOrbSchema = z.object({

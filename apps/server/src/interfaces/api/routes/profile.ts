@@ -22,8 +22,6 @@ const getProfileSchema = z.object({
 const updateProfileSchema = z.object({
   body: z.object({
     email: z.string().email().optional(),
-    wallet_address_eth: z.string().optional().nullable(),
-    wallet_address_sol: z.string().optional().nullable(),
   }),
   user: userSchema,
 });

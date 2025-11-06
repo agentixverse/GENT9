@@ -27,6 +27,25 @@ const tradeController = {
     }
   },
 
+  async getAggregateTradesByUser(req: Request, res: Response) {
+    if (!req.user?.id) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const userId = req.user.id;
+
+    try {
+      const trades = await tradeActionService.getAggregateTradesByUser(userId);
+      res.status(200).json(trades);
+      return;
+    } catch (error) {
+      console.error("Error fetching aggregate trades:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+  },
+
   async getTradeDetails(req: Request, res: Response) {
     if (!req.user?.id) {
       res.status(401).json({ error: "Unauthorized" });

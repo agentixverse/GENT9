@@ -38,7 +38,7 @@ const authController = {
         email,
         password_hash: hashedPassword,
       });
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
         expiresIn: "24h",
       });
       res.status(201).json({ token, user: sanitizeUser(user) });
@@ -63,12 +63,21 @@ const authController = {
         res.status(401).json({ error: "Invalid credentials" });
         return;
       }
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || "secret", {
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret", {
         expiresIn: "24h",
       });
       res.json({ token, user: sanitizeUser(user) });
     } catch (error) {
       res.status(500).json({ error: "An error occurred while logging in." });
+    }
+  },
+
+  async getMe(req: Request, res: Response) {
+    try {
+      // The 'protect' middleware has already attached the user to the request
+      res.json(req.user);
+    } catch (error) {
+      res.status(500).json({ error: "An error occurred while fetching user data." });
     }
   },
 };

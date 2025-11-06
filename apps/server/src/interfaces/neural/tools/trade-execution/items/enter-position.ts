@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { strategyQueue } from "@/infrastructure/queues/config";
 import { tokenService } from "@/services/system/token-service";
-import { strategyService } from "@/services/trading/strategy-service";
+import { strategyService } from "@/services/trading/strategy/strategy-service";
 import { tradeActionService } from "@/services/trading/trade-action-service";
 import { AgentRuntimeContextSchema } from "@/types/context";
 

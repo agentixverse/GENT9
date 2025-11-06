@@ -144,11 +144,21 @@ export const tradespaceService = {
 
     const threads = await db
       .selectFrom("threads")
-      .selectAll()
+      .innerJoin("thread_registry", "threads.registry_id", "thread_registry.id")
+      .selectAll("threads")
+      .select([
+        "thread_registry.name as registry_name",
+        "thread_registry.thread_type",
+        "thread_registry.supported_networks",
+      ])
       .where("orb_id", "=", orbId)
       .execute();
 
-    return { ...orb, threads };
+    // Derive chain from network thread
+    const networkThread = threads.find((t) => t.thread_type === "network_infra");
+    const chain = networkThread?.supported_networks?.[0] || null;
+
+    return { ...orb, threads, chain };
   },
 
   async createOrb(
@@ -156,7 +166,7 @@ export const tradespaceService = {
     orbData: {
       sector_id: number;
       name: string;
-      chain: ChainType;
+      network_thread_registry_id: string;
       asset_pairs: Record<string, number>;
       config_json?: Record<string, any>;
       context?: string;
@@ -168,7 +178,25 @@ export const tradespaceService = {
       throw new Error("Sector not found");
     }
 
-    // Always generate wallet synchronously
+    // Fetch the network thread from registry
+    const registryEntry = await db
+      .selectFrom("thread_registry")
+      .selectAll()
+      .where("id", "=", orbData.network_thread_registry_id)
+      .where("thread_type", "=", "network_infra")
+      .executeTakeFirst();
+
+    if (!registryEntry) {
+      throw new Error("Network thread not found in registry");
+    }
+
+    // Get the chain from the registry's supported_networks
+    const chain = registryEntry.supported_networks[0] as ChainType;
+    if (!chain) {
+      throw new Error("Registry entry has no supported networks");
+    }
+
+    // Generate wallet for the orb
     let walletAddress: string;
     let privyWalletId: string;
 
@@ -176,7 +204,7 @@ export const tradespaceService = {
       const orbId = `orb_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       const walletResult = await walletService.generateWallet({
         id: orbId,
-        chain: orbData.chain,
+        chain: chain,
         wallet_address: "",
         privy_wallet_id: "string",
         sectorType: sector.type,
@@ -184,7 +212,7 @@ export const tradespaceService = {
       walletAddress = walletResult.address;
 
       // For EVM chains, store the privy wallet ID (from publicKey field)
-      if (orbData.chain !== "icp") {
+      if (chain !== "icp") {
         privyWalletId = walletResult.publicKey || walletResult.address;
       } else {
         // For ICP, we use a different identifier
@@ -192,13 +220,14 @@ export const tradespaceService = {
       }
     } catch (error) {
       console.error(`Failed to generate wallet for orb: ${error}`);
-      throw new Error(`Failed to generate ${orbData.chain} wallet for orb`);
+      throw new Error(`Failed to generate ${chain} wallet for orb`);
     }
 
+    // Create the orb (without network_thread_id yet)
     const newOrb: NewOrb = {
       sector_id: orbData.sector_id,
       name: orbData.name,
-      chain: orbData.chain,
+      network_thread_id: null, // Will be set after creating thread
       wallet_address: walletAddress,
       privy_wallet_id: privyWalletId,
       asset_pairs: JSON.stringify(orbData.asset_pairs),
@@ -206,11 +235,33 @@ export const tradespaceService = {
       context: orbData.context || null,
     };
 
-    return await db
+    const createdOrb = await db
       .insertInto("orbs")
       .values(newOrb)
       .returningAll()
       .executeTakeFirstOrThrow();
+
+    // Create the network thread instance
+    const networkThread = await db
+      .insertInto("threads")
+      .values({
+        orb_id: createdOrb.id,
+        registry_id: orbData.network_thread_registry_id,
+        enabled: true,
+        config_json: JSON.stringify({}), // Default empty config
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    // Link the orb to the network thread
+    const updatedOrb = await db
+      .updateTable("orbs")
+      .set({ network_thread_id: networkThread.id })
+      .where("id", "=", createdOrb.id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    return updatedOrb;
   },
 
   async updateOrb(
@@ -267,18 +318,34 @@ export const tradespaceService = {
 
     return await db
       .selectFrom("threads")
-      .selectAll()
-      .where("orb_id", "=", orbId)
-      .orderBy("created_at", "desc")
+      .innerJoin("thread_registry", "threads.registry_id", "thread_registry.id")
+      .selectAll("threads")
+      .select([
+        "thread_registry.name as registry_name",
+        "thread_registry.provider_id",
+        "thread_registry.thread_type",
+        "thread_registry.supported_networks",
+        "thread_registry.agx_manifest",
+      ])
+      .where("threads.orb_id", "=", orbId)
+      .orderBy("threads.created_at", "desc")
       .execute();
   },
 
   async getThreadById(threadId: number, userId: number) {
     return await db
       .selectFrom("threads")
+      .innerJoin("thread_registry", "threads.registry_id", "thread_registry.id")
       .innerJoin("orbs", "threads.orb_id", "orbs.id")
       .innerJoin("sectors", "orbs.sector_id", "sectors.id")
       .selectAll("threads")
+      .select([
+        "thread_registry.name as registry_name",
+        "thread_registry.provider_id",
+        "thread_registry.thread_type",
+        "thread_registry.supported_networks",
+        "thread_registry.agx_manifest",
+      ])
       .where("threads.id", "=", threadId)
       .where("sectors.user_id", "=", userId)
       .executeTakeFirst();
@@ -532,10 +599,14 @@ export const tradespaceService = {
           orbs.map(async (orb) => {
             const threads = await this.getThreadsByOrb(orb.id, userId);
 
+            // Derive chain from network thread
+            const networkThread = threads.find((t) => t.thread_type === "network_infra");
+            const chain = (networkThread?.supported_networks?.[0] as ChainType) || "ethereum";
+
             return {
               id: orb.id,
               name: orb.name,
-              chain: orb.chain,
+              chain,
               wallet_address: orb.wallet_address,
               asset_pairs:
                 typeof orb.asset_pairs === "string"

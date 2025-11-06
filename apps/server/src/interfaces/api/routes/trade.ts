@@ -57,6 +57,9 @@ const userFeedbackSchema = z.object({
 
 router.use(protect);
 
+// GET /api/trades/aggregate - Get all trades across all user's sectors
+router.get("/aggregate", tradeController.getAggregateTradesByUser);
+
 // GET /api/trades/sector/:sectorId - Get trades for authenticated user's sector
 router.get(
   "/sector/:sectorId",

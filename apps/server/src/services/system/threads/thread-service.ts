@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import { getRandomPort } from "get-port-please";
 import path from "path";
 
-import { threadRegistry } from "@/constants/thread-registry";
+import { db } from "@/infrastructure/database/turso-connection";
 import { ManagedProcess, ThreadConfig } from "@/types/threads";
 import { createConfigHash } from "@/utils/threads";
 import generateCapnp from "./workerd-capnp-generator";
@@ -29,10 +29,24 @@ export const threadService = {
     }
 
     console.log(`[thread-service] Creating new worker for hash: ${hash}`);
-    const provider = threadRegistry.find((p) => p.id === providerId);
-    if (!provider) {
+    const registryEntry = await db
+      .selectFrom("thread_registry")
+      .selectAll()
+      .where("id", "=", providerId)
+      .executeTakeFirst();
+
+    if (!registryEntry) {
       throw new Error(`[thread-service] Provider '${providerId}' not found in registry.`);
     }
+
+    // Transform database row to ThreadProvider format
+    const provider = {
+      id: registryEntry.id,
+      source: registryEntry.logic_path,
+      type: "module" as const, // Default to module for now
+      threadType: registryEntry.thread_type,
+      permissions: registryEntry.agx_manifest?.permissions || [],
+    };
 
     const port = await getRandomPort();
     const tempDir = path.join(__dirname, "tmp", hash);

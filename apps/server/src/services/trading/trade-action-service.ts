@@ -70,6 +70,26 @@ export const tradeActionService = {
       .execute();
   },
 
+  // Get all trades across all user's sectors
+  async getAggregateTradesByUser(userId: number) {
+    return await db
+      .selectFrom("trade_actions")
+      .innerJoin("sectors", "sectors.id", "trade_actions.sector_id")
+      .where("sectors.user_id", "=", userId)
+      .select([
+        "trade_actions.id",
+        "trade_actions.sector_id",
+        "trade_actions.status",
+        "trade_actions.is_active",
+        "trade_actions.summary",
+        "trade_actions.created_at",
+        "trade_actions.updated_at",
+        "sectors.name as sector_name", // Include sector name for context
+      ])
+      .orderBy("trade_actions.created_at", "desc")
+      .execute();
+  },
+
   async startNewTradeAction(sectorId: number) {
     return await db
       .insertInto("trade_actions")

@@ -1,7 +1,7 @@
 import { createTool } from "@mastra/core";
 import { z } from "zod";
 
-import { strategyService } from "@/services/trading/strategy-service";
+import { strategyService } from "@/services/trading/strategy/strategy-service";
 import { AgentRuntimeContextSchema } from "@/types/context";
 
 export const viewBuildStateTool = createTool({
