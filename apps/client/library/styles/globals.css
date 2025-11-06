@@ -48,6 +48,7 @@
   --sidebar-ring: oklch(0.6397 0.172 36.4421);
   --font-sans: Inter, sans-serif;
   --font-serif: Source Serif 4, serif;
+  --font-outfit: var(--font-outfit), sans-serif;
   --font-mono: JetBrains Mono, monospace;
   --radius: 0.75rem;
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
