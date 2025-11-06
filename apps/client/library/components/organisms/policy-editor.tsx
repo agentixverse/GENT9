@@ -27,7 +27,7 @@ interface PolicyEditorProps {
 export function PolicyEditor({ policy, policyHistory, onSave, onSelectVersion, isLoading }: PolicyEditorProps) {
   const [policyText, setPolicyText] = useState(() => {
     if (!policy) return "";
-    return formatPolicyToText(policy.policyDocument);
+    return formatPolicyToText(policy.policy_document);
   });
 
   const [selectedVersion, setSelectedVersion] = useState(policy?.version || 1);
@@ -47,7 +47,7 @@ export function PolicyEditor({ policy, policyHistory, onSave, onSelectVersion, i
 
     const selectedPolicy = policyHistory?.find(p => p.version === versionNum);
     if (selectedPolicy) {
-      setPolicyText(formatPolicyToText(selectedPolicy.policyDocument));
+      setPolicyText(formatPolicyToText(selectedPolicy.policy_document));
     }
   };
 
@@ -70,7 +70,7 @@ export function PolicyEditor({ policy, policyHistory, onSave, onSelectVersion, i
                 <SelectContent>
                   {policyHistory.map((p) => (
                     <SelectItem key={p.version} value={p.version.toString()}>
-                      Version {p.version} {p.isActive && "(Active)"}
+                      Version {p.version} {p.is_active && "(Active)"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -109,14 +109,14 @@ export function PolicyEditor({ policy, policyHistory, onSave, onSelectVersion, i
 
         <div className="flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            {policy?.updatedAt && (
-              <span>Last updated: {new Date(policy.updatedAt).toLocaleString()}</span>
+            {policy?.created_at && (
+              <span>Created: {new Date(policy.created_at).toLocaleString()}</span>
             )}
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => setPolicyText(policy ? formatPolicyToText(policy.policyDocument) : "")}
+              onClick={() => setPolicyText(policy ? formatPolicyToText(policy.policy_document) : "")}
               disabled={isLoading}
             >
               Reset
@@ -133,7 +133,7 @@ export function PolicyEditor({ policy, policyHistory, onSave, onSelectVersion, i
 }
 
 // Helper function to format policy document to readable text
-function formatPolicyToText(policyDoc: UserPolicy['policyDocument']): string {
+function formatPolicyToText(policyDoc: UserPolicy['policy_document']): string {
   const sections: string[] = [];
 
   sections.push("# Trading Policy Directive\n");

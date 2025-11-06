@@ -222,8 +222,8 @@ export function PolicyTestingArea({ policy, onRunTest }: PolicyTestingAreaProps)
 
 // Generate mock test results based on policy and scenario
 function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
-  const isConservative = policy.policyDocument.investment_strategy.strategy_type === 'conservative';
-  const isAggressive = policy.policyDocument.investment_strategy.strategy_type === 'aggressive';
+  const isConservative = policy.policy_document.investment_strategy?.strategy_type === 'conservative';
+  const isAggressive = policy.policy_document.investment_strategy?.strategy_type === 'aggressive';
 
   let decision = 'APPROVED';
   let interpretation = '';
@@ -233,17 +233,17 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
 
   switch (scenario.id) {
     case 'bull-market':
-      interpretation = `In a strong uptrend, your ${policy.policyDocument.investment_strategy.strategy_type} strategy suggests ${isConservative ? 'cautious accumulation' : 'aggressive position building'}. The ${policy.policyDocument.risk_management.max_position_size_percent}% max position size and ${policy.policyDocument.trading_preferences.frequency_minutes}min trading frequency will be applied.`;
+      interpretation = `In a strong uptrend, your ${policy.policy_document.investment_strategy?.strategy_type} strategy suggests ${isConservative ? 'cautious accumulation' : 'aggressive position building'}. The ${policy.policy_document.risk_management?.max_position_size_percent}% max position size and ${policy.policy_document.trading_preferences?.frequency_minutes}min trading frequency will be applied.`;
       decisions = [
         {
           approved: true,
           action: 'Buy ETH with 15% of available capital',
-          reasoning: `Within max position size limit (${policy.policyDocument.risk_management.max_position_size_percent}%), market momentum aligns with strategy`,
+          reasoning: `Within max position size limit (${policy.policy_document.risk_management?.max_position_size_percent}%), market momentum aligns with strategy`,
         },
         {
           approved: !isConservative,
           action: 'Enable yield farming on position',
-          reasoning: `Yield farming is ${policy.policyDocument.investment_strategy.yield_farming_enabled ? 'enabled' : 'disabled'} in policy`,
+          reasoning: `Yield farming is ${policy.policy_document.investment_strategy?.yield_farming_enabled ? 'enabled' : 'disabled'} in policy`,
         },
       ];
       riskLevel = isAggressive ? 'Medium-High' : 'Low-Medium';
@@ -252,7 +252,7 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
 
     case 'bear-market':
       decision = isConservative ? 'REJECTED' : 'APPROVED';
-      interpretation = `During market downturn, your policy's ${policy.policyDocument.risk_management.stop_loss_percent}% stop loss and ${policy.policyDocument.risk_management.daily_loss_limit}% daily loss limit are triggered. ${isConservative ? 'Conservative approach suggests waiting' : 'Looking for oversold opportunities'}.`;
+      interpretation = `During market downturn, your policy's ${policy.policy_document.risk_management?.stop_loss_percent}% stop loss and ${policy.policy_document.risk_management?.daily_loss_limit}% daily loss limit are triggered. ${isConservative ? 'Conservative approach suggests waiting' : 'Looking for oversold opportunities'}.`;
       decisions = [
         {
           approved: false,
@@ -262,7 +262,7 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
         {
           approved: true,
           action: 'Trigger stop loss on existing position',
-          reasoning: `Position down ${policy.policyDocument.risk_management.stop_loss_percent}%, automatic exit per policy`,
+          reasoning: `Position down ${policy.policy_document.risk_management?.stop_loss_percent}%, automatic exit per policy`,
         },
       ];
       riskLevel = 'High';
@@ -270,12 +270,12 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
       break;
 
     case 'sideways':
-      interpretation = `Low volatility conditions favor ${policy.policyDocument.trading_preferences.frequency_minutes > 60 ? 'patience and reduced trading' : 'range trading strategies'}. Your DCA allocation of ${policy.policyDocument.investment_strategy.dca_percentage}% continues as planned.`;
+      interpretation = `Low volatility conditions favor ${(policy.policy_document.trading_preferences?.frequency_minutes || 0) > 60 ? 'patience and reduced trading' : 'range trading strategies'}. Your DCA allocation of ${policy.policy_document.investment_strategy?.dca_percentage}% continues as planned.`;
       decisions = [
         {
           approved: true,
           action: 'Execute scheduled DCA buy',
-          reasoning: `Part of ${policy.policyDocument.investment_strategy.dca_percentage}% DCA allocation, market conditions irrelevant`,
+          reasoning: `Part of ${policy.policy_document.investment_strategy?.dca_percentage}% DCA allocation, market conditions irrelevant`,
         },
         {
           approved: false,
@@ -289,7 +289,7 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
 
     case 'high-volatility':
       decision = isConservative ? 'REJECTED' : 'APPROVED';
-      interpretation = `Extreme volatility exceeds your ${policy.policyDocument.trading_preferences.max_slippage_percent}% max slippage tolerance. ${isConservative ? 'Pausing trading' : 'Adjusting position sizes down'}.`;
+      interpretation = `Extreme volatility exceeds your ${policy.policy_document.trading_preferences?.max_slippage_percent}% max slippage tolerance. ${isConservative ? 'Pausing trading' : 'Adjusting position sizes down'}.`;
       decisions = [
         {
           approved: !isConservative,
@@ -307,7 +307,7 @@ function generateMockResults(policy: UserPolicy, scenario: TestScenario) {
       break;
 
     case 'flash-crash':
-      interpretation = `Sudden price movement triggers your ${policy.policyDocument.risk_management.max_drawdown_percent}% max drawdown protection. Emergency protocols activated.`;
+      interpretation = `Sudden price movement triggers your ${policy.policy_document.risk_management?.max_drawdown_percent}% max drawdown protection. Emergency protocols activated.`;
       decisions = [
         {
           approved: true,

@@ -7,7 +7,7 @@ export const useSectorPolicy = (sectorId: number) => {
   return useQuery({
     queryKey: ["policy", sectorId],
     queryFn: async () => {
-      const { data } = await api.get<UserPolicy>(`/sectors/${sectorId}/policy`);
+      const { data } = await api.get<UserPolicy>(`/policy/${sectorId}`);
       return data;
     },
     enabled: !!sectorId,
@@ -18,7 +18,7 @@ export const useSectorPolicyHistory = (sectorId: number) => {
   return useQuery({
     queryKey: ["policyHistory", sectorId],
     queryFn: async () => {
-      const { data } = await api.get<UserPolicy[]>(`/sectors/${sectorId}/policy/history`);
+      const { data } = await api.get<UserPolicy[]>(`/policy/${sectorId}/history`);
       return data;
     },
     enabled: !!sectorId,
@@ -30,7 +30,7 @@ export const useCreateSectorPolicy = (sectorId: number) => {
 
   return useMutation({
     mutationFn: async (policyDocument: any) => {
-      const { data } = await api.post(`/sectors/${sectorId}/policy`, { policyDocument });
+      const { data } = await api.post(`/policy/${sectorId}`, { policy_document: policyDocument });
       return data;
     },
     onSuccess: () => {
@@ -49,7 +49,7 @@ export const useUpdateSectorPolicy = (sectorId: number) => {
 
   return useMutation({
     mutationFn: async (policyDocument: any) => {
-      await api.put(`/sectors/${sectorId}/policy`, { policyDocument });
+      await api.put(`/policy/${sectorId}`, { policy_document: policyDocument });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["policy", sectorId] });
@@ -66,7 +66,7 @@ export const useActivatePolicyVersion = (sectorId: number) => {
 
   return useMutation({
     mutationFn: async (version: number) => {
-      await api.post(`/sectors/${sectorId}/policy/activate/${version}`);
+      await api.post(`/policy/${sectorId}/activate/${version}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["policy", sectorId] });

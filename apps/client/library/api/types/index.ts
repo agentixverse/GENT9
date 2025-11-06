@@ -116,40 +116,38 @@ export interface AIDecision {
 
 // User Policy Types
 export interface UserPolicy {
-  id: string;
-  sectorId: number;
-  userId: number;
-  policyDocument: {
-    risk_management: {
-      max_position_size_percent: number;
-      stop_loss_percent: number;
-      take_profit_percent: number;
-      max_drawdown_percent: number;
-      daily_loss_limit: number;
+  id: number;
+  sector_id: number;
+  policy_document: {
+    risk_management?: {
+      max_position_size_percent?: number;
+      stop_loss_percent?: number;
+      take_profit_percent?: number;
+      max_drawdown_percent?: number;
+      daily_loss_limit?: number;
     };
-    trading_preferences: {
-      frequency_minutes: number;
-      enabled_markets: string[];
-      preferred_exchanges: string[];
-      max_slippage_percent: number;
-      base_currency: {
-        ethereum: string;
-        solana: string;
+    trading_preferences?: {
+      frequency_minutes?: number;
+      enabled_markets?: string[];
+      preferred_exchanges?: string[];
+      max_slippage_percent?: number;
+      base_currency?: {
+        ethereum?: string;
+        solana?: string;
       };
     };
-    investment_strategy: {
-      strategy_type: 'conservative' | 'balanced_mix' | 'aggressive';
-      dca_percentage: number;
-      momentum_percentage: number;
-      yield_farming_enabled: boolean;
-      target_annual_return: number;
+    investment_strategy?: {
+      strategy_type?: 'conservative' | 'balanced_mix' | 'aggressive';
+      dca_percentage?: number;
+      momentum_percentage?: number;
+      yield_farming_enabled?: boolean;
+      target_annual_return?: number;
     };
   };
   version: number;
-  isActive: boolean;
-  aiCritique?: string;
-  createdAt: string;
-  updatedAt?: string;
+  is_active: boolean;
+  ai_critique: string | null;
+  created_at: Date;
 }
 
 // API Response Wrappers

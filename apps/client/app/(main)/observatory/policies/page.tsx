@@ -29,14 +29,13 @@ export default function PoliciesPage() {
   // Handle template selection
   const handleSelectTemplate = (template: PolicyTemplate) => {
     const mockPolicy: UserPolicy = {
-      id: 'new',
-      sectorId: activeSectorId || 0,
-      userId: 'current-user',
-      policyDocument: template.policyDocument,
+      id: 0, // Will be assigned by backend
+      sector_id: activeSectorId || 0,
+      policy_document: template.policyDocument,
       version: (policy?.version || 0) + 1,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      is_active: true,
+      ai_critique: null,
+      created_at: new Date(),
     };
     setEditingPolicy(mockPolicy);
     setIsEditing(true);
@@ -51,9 +50,9 @@ export default function PoliciesPage() {
     }
 
     // In a real implementation, this would parse the policyText
-    // and convert it back to the policyDocument structure
+    // and convert it back to the policy_document structure
     // For now, we'll use the existing policy document or a default one
-    const policyDocument = editingPolicy?.policyDocument || policy?.policyDocument || getDefaultPolicyDocument();
+    const policyDocument = editingPolicy?.policy_document || policy?.policy_document || getDefaultPolicyDocument();
 
     createPolicyMutation.mutate(policyDocument, {
       onSuccess: () => {
@@ -76,9 +75,9 @@ export default function PoliciesPage() {
     if (policy) {
       const duplicated = {
         ...policy,
-        id: 'new',
+        id: 0, // Will be assigned by backend
         version: policy.version + 1,
-        isActive: false,
+        is_active: false,
       };
       setEditingPolicy(duplicated);
       setIsEditing(true);
@@ -191,7 +190,7 @@ export default function PoliciesPage() {
 }
 
 // Default policy document for new policies
-function getDefaultPolicyDocument(): UserPolicy['policyDocument'] {
+function getDefaultPolicyDocument(): UserPolicy['policy_document'] {
   return {
     risk_management: {
       max_position_size_percent: 20,

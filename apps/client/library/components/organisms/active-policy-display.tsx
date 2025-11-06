@@ -35,8 +35,7 @@ export function ActivePolicyDisplay({ policy, onEdit, onDuplicate, isLoading }: 
     );
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -71,113 +70,119 @@ export function ActivePolicyDisplay({ policy, onEdit, onDuplicate, isLoading }: 
         </div>
         <CardDescription className="flex items-center gap-2">
           <Clock className="h-3 w-3" />
-          Last updated: {formatDate(policy.updatedAt || policy.createdAt)}
+          Created: {formatDate(policy.created_at)}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Investment Strategy */}
+        {policy.policy_document.investment_strategy && (
         <div className="space-y-3">
           <h4 className="font-semibold text-sm flex items-center gap-2">
             Investment Strategy
             <Badge variant="secondary" className="text-xs">
-              {policy.policyDocument.investment_strategy.strategy_type}
+              {policy.policy_document.investment_strategy.strategy_type}
             </Badge>
           </h4>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <PolicyMetric
               label="DCA Allocation"
-              value={`${policy.policyDocument.investment_strategy.dca_percentage}%`}
+              value={`${policy.policy_document.investment_strategy.dca_percentage}%`}
             />
             <PolicyMetric
               label="Momentum Allocation"
-              value={`${policy.policyDocument.investment_strategy.momentum_percentage}%`}
+              value={`${policy.policy_document.investment_strategy.momentum_percentage}%`}
             />
             <PolicyMetric
               label="Yield Farming"
-              value={policy.policyDocument.investment_strategy.yield_farming_enabled ? 'Enabled' : 'Disabled'}
+              value={policy.policy_document.investment_strategy.yield_farming_enabled ? 'Enabled' : 'Disabled'}
             />
             <PolicyMetric
               label="Target Return"
-              value={`${policy.policyDocument.investment_strategy.target_annual_return}% annually`}
+              value={`${policy.policy_document.investment_strategy.target_annual_return}% annually`}
             />
           </div>
         </div>
+        )}
 
-        <Separator />
+        {policy.policy_document.investment_strategy && <Separator />}
 
         {/* Risk Management */}
+        {policy.policy_document.risk_management && (
         <div className="space-y-3">
           <h4 className="font-semibold text-sm">Risk Management</h4>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <PolicyMetric
               label="Max Position Size"
-              value={`${policy.policyDocument.risk_management.max_position_size_percent}%`}
+              value={`${policy.policy_document.risk_management.max_position_size_percent}%`}
             />
             <PolicyMetric
               label="Stop Loss"
-              value={`${policy.policyDocument.risk_management.stop_loss_percent}%`}
+              value={`${policy.policy_document.risk_management.stop_loss_percent}%`}
             />
             <PolicyMetric
               label="Take Profit"
-              value={`${policy.policyDocument.risk_management.take_profit_percent}%`}
+              value={`${policy.policy_document.risk_management.take_profit_percent}%`}
             />
             <PolicyMetric
               label="Max Drawdown"
-              value={`${policy.policyDocument.risk_management.max_drawdown_percent}%`}
+              value={`${policy.policy_document.risk_management.max_drawdown_percent}%`}
             />
             <PolicyMetric
               label="Daily Loss Limit"
-              value={`${policy.policyDocument.risk_management.daily_loss_limit}%`}
+              value={`${policy.policy_document.risk_management.daily_loss_limit}%`}
             />
           </div>
         </div>
+        )}
 
-        <Separator />
+        {policy.policy_document.risk_management && <Separator />}
 
         {/* Trading Preferences */}
+        {policy.policy_document.trading_preferences && (
         <div className="space-y-3">
           <h4 className="font-semibold text-sm">Trading Preferences</h4>
           <div className="space-y-2 text-sm">
             <PolicyMetric
               label="Trading Frequency"
-              value={`Every ${policy.policyDocument.trading_preferences.frequency_minutes} minutes`}
+              value={`Every ${policy.policy_document.trading_preferences.frequency_minutes} minutes`}
               fullWidth
             />
             <PolicyMetric
               label="Enabled Markets"
-              value={policy.policyDocument.trading_preferences.enabled_markets.join(', ')}
+              value={policy.policy_document.trading_preferences.enabled_markets?.join(', ') || 'N/A'}
               fullWidth
             />
             <PolicyMetric
               label="Preferred Exchanges"
-              value={policy.policyDocument.trading_preferences.preferred_exchanges.join(', ')}
+              value={policy.policy_document.trading_preferences.preferred_exchanges?.join(', ') || 'N/A'}
               fullWidth
             />
             <PolicyMetric
               label="Max Slippage"
-              value={`${policy.policyDocument.trading_preferences.max_slippage_percent}%`}
+              value={`${policy.policy_document.trading_preferences.max_slippage_percent}%`}
               fullWidth
             />
             <div className="grid grid-cols-2 gap-3">
               <PolicyMetric
                 label="Base Currency (ETH)"
-                value={policy.policyDocument.trading_preferences.base_currency.ethereum}
+                value={policy.policy_document.trading_preferences.base_currency?.ethereum || 'N/A'}
               />
               <PolicyMetric
                 label="Base Currency (SOL)"
-                value={policy.policyDocument.trading_preferences.base_currency.solana}
+                value={policy.policy_document.trading_preferences.base_currency?.solana || 'N/A'}
               />
             </div>
           </div>
         </div>
+        )}
 
-        {policy.aiCritique && (
+        {policy.ai_critique && (
           <>
             <Separator />
             <div className="space-y-2">
               <h4 className="font-semibold text-sm">AI Critique</h4>
               <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <p className="text-sm text-muted-foreground">{policy.aiCritique}</p>
+                <p className="text-sm text-muted-foreground">{policy.ai_critique}</p>
               </div>
             </div>
           </>
