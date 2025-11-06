@@ -5,17 +5,28 @@ import { promises as fs } from "fs";
 import path from "path";
 import { ChildProcess } from "child_process";
 
-vi.mock("@/constants/thread-registry", () => ({
-  threadRegistry: [
-    {
-      id: "test-provider",
-      source: "test-fixture://worker.js",
-      type: "module",
-      threadType: "dex",
-      permissions: ["storage::isolated", "wallet::read"],
-    },
-  ],
+type MockDb = {
+  selectFrom: ReturnType<typeof vi.fn>;
+  selectAll: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  executeTakeFirst: ReturnType<typeof vi.fn>;
+};
+
+// Mock the database module
+vi.mock("@/infrastructure/database/turso-connection", () => ({
+  db: {
+    selectFrom: vi.fn().mockReturnThis(),
+    selectAll: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    executeTakeFirst: vi.fn(),
+  } as MockDb,
 }));
+
+// Import the mocked db AFTER the mock setup
+import { db } from "@/infrastructure/database/turso-connection";
+
+// Cast the imported db to our mock type
+const mockDb = db as unknown as MockDb;
 
 vi.mock("ky", () => ({
   default: {
@@ -48,8 +59,33 @@ describe("Thread Service", () => {
   const config: ThreadConfig = { setting: "test" };
 
   beforeEach(() => {
+    vi.clearAllMocks();
     createdProcesses.length = 0;
     createdDirs.length = 0;
+    // Seed the mock database for each test
+    mockDb.executeTakeFirst.mockResolvedValue({
+      id: providerId,
+      name: "Test Provider",
+      version: "1.0.0",
+      provider_id: "test-provider",
+      author: "Test Author",
+      thread_type: "dex",
+      supported_networks: ["ethereum"],
+      logic_path: "test-fixture://worker.js",
+      ui_entry: null,
+      agx_manifest: {
+        description: "A test provider",
+        storage_schema: {},
+        api_endpoints: {},
+        features: [],
+        permissions: ["storage::isolated", "wallet::read"],
+        created_at: new Date().toISOString(),
+      },
+      source_url: "test-fixture://worker.js",
+      discovered_at: new Date().toISOString(),
+      last_validated_at: new Date().toISOString(),
+      config_json: {}, // Added for the new config_json column
+    });
   });
 
   afterEach(async () => {
@@ -130,6 +166,9 @@ describe("Thread Service", () => {
 
     test("should throw an error if provider is not found in registry", async () => {
       const invalidProviderId = "invalid-provider";
+      
+      // Mock the database to return null for invalid provider
+      mockDb.executeTakeFirst.mockResolvedValueOnce(null);
 
       await expect(
         threadService.getOrServeThread(orbId, sectorId, chain, invalidProviderId, config)
