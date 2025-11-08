@@ -8,6 +8,7 @@ export async function up(db: Kysely<DB>): Promise<void> {
     .addColumn("id", "integer", (col) => col.primaryKey().autoIncrement())
     .addColumn("email", "text", (col) => col.notNull().unique())
     .addColumn("password_hash", "text", (col) => col.notNull())
+    .addColumn("settings", "text") // JSON stored as TEXT
     .addColumn("created_at", "text", (col) =>
       col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`)
     )

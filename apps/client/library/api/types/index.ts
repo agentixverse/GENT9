@@ -31,6 +31,7 @@ export type {
 export interface User {
   id: number;
   email: string;
+  settings?: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
 }

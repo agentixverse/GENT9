@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/library/api/hooks/use-auth";
+import { useProfile, useUpdateProfile } from "@/library/api/hooks/use-profile";
 import { Badge } from "@/library/components/atoms/badge";
 import { Button } from "@/library/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/library/components/atoms/card";
@@ -18,10 +18,11 @@ import { Skeleton } from "@/library/components/atoms/skeleton";
 import { Switch } from "@/library/components/atoms/switch";
 import { Bell, Mail, Monitor, Moon, Palette, Smartphone, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
-  const { user, isLoading } = useAuth();
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
   const { theme, setTheme } = useTheme();
 
   const [notifications, setNotifications] = useState({
@@ -29,11 +30,31 @@ export default function SettingsPage() {
   });
 
   const [userSettings, setUserSettings] = useState({
-    email: user?.email || "",
+    email: "",
     language: "en",
     timezone: "UTC",
     currency: "USD",
   });
+
+  // Initialize userSettings from profile data
+  useEffect(() => {
+    if (profile) {
+      setUserSettings({
+        email: profile.email || "",
+        language: profile.settings?.language || "en",
+        timezone: profile.settings?.timezone || "UTC",
+        currency: profile.settings?.currency || "USD",
+      });
+    }
+  }, [profile]);
+
+  const handleSaveSettings = () => {
+    const { email, ...settingsData } = userSettings;
+    updateProfile.mutate({
+      email: email !== profile?.email ? email : undefined,
+      settings: settingsData,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -69,7 +90,7 @@ export default function SettingsPage() {
           variant="outline"
           className="bg-blue-500/10 text-blue-600 border-blue-500/20"
         >
-          {user?.email}
+          {profile?.email}
         </Badge>
       </div>
 
@@ -77,6 +98,8 @@ export default function SettingsPage() {
       <AccountSettingsSection
         userSettings={userSettings}
         setUserSettings={setUserSettings}
+        onSave={handleSaveSettings}
+        isSaving={updateProfile.isPending}
       />
 
       {/* Theme & Preferences - Secondary */}
@@ -99,9 +122,13 @@ export default function SettingsPage() {
 function AccountSettingsSection({
   userSettings,
   setUserSettings,
+  onSave,
+  isSaving,
 }: {
   userSettings: any;
   setUserSettings: (settings: any) => void;
+  onSave: () => void;
+  isSaving: boolean;
 }) {
   return (
     <Card className="border-blue-200 dark:border-blue-800">
@@ -217,7 +244,9 @@ function AccountSettingsSection({
         <Separator />
 
         <div className="flex justify-end">
-          <Button>Save Account Settings</Button>
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Account Settings"}
+          </Button>
         </div>
       </CardContent>
     </Card>
