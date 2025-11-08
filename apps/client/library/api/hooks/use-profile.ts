@@ -5,12 +5,14 @@ import { toast } from "sonner";
 interface Profile {
   id: number;
   email: string;
+  settings?: Record<string, any> | null;
   created_at: string;
   updated_at?: string | null;
 }
 
 interface UpdateProfileData {
   email?: string;
+  settings?: Record<string, any>;
 }
 
 export const useProfile = () => {

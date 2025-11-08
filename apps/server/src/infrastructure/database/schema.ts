@@ -9,6 +9,7 @@ export interface UsersTable {
   id: Generated<number>;
   email: string;
   password_hash: string;
+  settings: JSONColumnType<Record<string, any> | null>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string | undefined>;
 }

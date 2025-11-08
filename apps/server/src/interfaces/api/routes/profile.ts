@@ -22,6 +22,7 @@ const getProfileSchema = z.object({
 const updateProfileSchema = z.object({
   body: z.object({
     email: z.string().email().optional(),
+    settings: z.record(z.any()).optional(),
   }),
   user: userSchema,
 });
