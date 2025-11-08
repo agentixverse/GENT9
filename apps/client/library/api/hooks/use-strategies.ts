@@ -90,6 +90,7 @@ export const useAddRevision = (strategyId: number) => {
 
 /**
  * Delete a strategy (soft delete)
+ * FIX #6: Added optimistic updates for better UX
  */
 export const useDeleteStrategy = () => {
   const queryClient = useQueryClient();
@@ -98,11 +99,32 @@ export const useDeleteStrategy = () => {
     mutationFn: async (strategyId: number) => {
       await api.delete(`/backtests/strategies/${strategyId}`);
     },
+    // Optimistically remove strategy from list before server response
+    onMutate: async (strategyId: number) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["strategies"] });
+
+      // Snapshot the previous value
+      const previousStrategies = queryClient.getQueryData(["strategies"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["strategies"], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((strategy) => strategy.id !== strategyId);
+      });
+
+      // Return context with previous value for rollback
+      return { previousStrategies };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["strategies"] });
       toast.success("Strategy deleted");
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousStrategies) {
+        queryClient.setQueryData(["strategies"], context.previousStrategies);
+      }
       toast.error(error?.response?.data?.message || "Failed to delete strategy");
     },
   });

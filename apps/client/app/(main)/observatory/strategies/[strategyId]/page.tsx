@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/library/components/atoms/button";
@@ -20,11 +20,30 @@ import {
 } from "@/library/api/hooks/use-backtest";
 import { useRevisions } from "@/library/api/hooks/use-revisions";
 import { useBacktestStore } from "@/library/store/backtest-store";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/library/components/atoms/alert";
 
 export default function StrategyDetailPage() {
   const params = useParams();
   const strategyId = parseInt(params.strategyId as string);
+
+  // FIX #2: Handle invalid strategyId (NaN)
+  if (isNaN(strategyId)) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="size-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Invalid Strategy ID</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            The URL contains an invalid strategy identifier. Please check the URL and try again.
+          </p>
+          <Link href="/observatory/strategies">
+            <Button>Back to Strategies</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const { data: strategy, isLoading } = useStrategy(strategyId);
   const { revisions, activeRevision } = useRevisions(strategy);
@@ -58,20 +77,24 @@ export default function StrategyDetailPage() {
   // Poll status when backtest is running
   useBacktestStatusPoller(strategyId);
 
+  // FIX #5: Track if this is the first load to prevent re-initialization
+  const isFirstLoad = useRef(true);
+
+  // Initialize with active revision on first load only
+  useEffect(() => {
+    if (isFirstLoad.current && strategy && activeRevision) {
+      setSelectedRevisionIndex(strategy.active_revision_index);
+      setCode(activeRevision.code);
+      isFirstLoad.current = false;
+    }
+  }, [strategy, activeRevision, setSelectedRevisionIndex]);
+
   // Update code when revision changes
   useEffect(() => {
     if (revisions[selectedRevisionIndex]) {
       setCode(revisions[selectedRevisionIndex].code);
     }
   }, [selectedRevisionIndex, revisions]);
-
-  // Initialize with active revision
-  useEffect(() => {
-    if (strategy && activeRevision) {
-      setSelectedRevisionIndex(strategy.active_revision_index);
-      setCode(activeRevision.code);
-    }
-  }, [strategy?.id]); // Only run when strategy loads
 
   const handleSaveRevision = () => {
     if (!code.trim()) return;
@@ -85,6 +108,10 @@ export default function StrategyDetailPage() {
   const handleSetActive = (index: number) => {
     setActiveRevision({ revisionIndex: index });
   };
+
+  // FIX #4: Don't show stale results when backtest is running (race condition)
+  const isBacktestActive = strategy?.status === "running" || strategy?.status === "queued";
+  const shouldShowResults = results && !isBacktestActive;
 
   if (isLoading) {
     return (
@@ -132,10 +159,10 @@ export default function StrategyDetailPage() {
         </div>
       </div>
 
-      {/* 3-Column Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Revisions Sidebar */}
-        <div className="w-64 flex-shrink-0">
+      {/* FIX #1: Responsive 3-Column Layout */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Left: Revisions Sidebar - Hidden on mobile, visible on large screens */}
+        <div className="hidden lg:block lg:w-64 lg:flex-shrink-0 border-b lg:border-b-0">
           <RevisionsSidebar
             strategy={strategy}
             selectedRevisionIndex={selectedRevisionIndex}
@@ -148,8 +175,8 @@ export default function StrategyDetailPage() {
           />
         </div>
 
-        {/* Center: Code Editor */}
-        <div className="flex-1 border-x">
+        {/* Center: Code Editor - Full width on mobile */}
+        <div className="flex-1 lg:border-x overflow-hidden">
           <StrategyEditor
             code={code}
             onCodeChange={setCode}
@@ -158,19 +185,19 @@ export default function StrategyDetailPage() {
             onSaveRevision={handleSaveRevision}
             onRunBacktest={handleRunBacktest}
             isSaving={isSaving}
-            isRunning={isRunning || strategy.status === "running" || strategy.status === "queued"}
+            isRunning={isRunning || isBacktestActive}
             canSave={code.trim() !== ""}
           />
         </div>
 
-        {/* Right: Results Panel */}
-        <div className="w-96 flex-shrink-0">
+        {/* Right: Results Panel - Hidden on mobile/tablet, visible on xl screens */}
+        <div className="hidden xl:block xl:w-96 xl:flex-shrink-0">
           <ResultsPanel
-            results={results || null}
-            htmlReport={htmlReport || null}
+            results={shouldShowResults ? results : null}
+            htmlReport={shouldShowResults ? htmlReport : null}
             activeTab={resultsTab}
             onTabChange={setResultsTab}
-            isLoading={resultsLoading}
+            isLoading={resultsLoading || isBacktestActive}
           />
         </div>
       </div>
